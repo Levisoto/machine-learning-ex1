@@ -1,6 +1,7 @@
-ex1/token.mat
+ex1/.gitignore
 ex1-haskell/.stack-work/
 *.dat
+*.mat
 ex1-haskell/.gitignore
 ex1-haskell/jvalues.txt
 *~

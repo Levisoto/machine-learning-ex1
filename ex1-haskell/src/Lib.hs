@@ -1,7 +1,5 @@
 module Lib where
 
--- import Statistics.LinearRegression
--- import qualified Data.Vector.Unboxed as U
 import Data.Monoid
 import Data.Decimal
 import Data.Matrix
@@ -10,46 +8,48 @@ import Graphics.EasyPlot
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
-data LinReg m a = Single a 
-                | Cons m a (LinReg m a)
+data LinReg j t a = Single a 
+                  | Cons j t a (LinReg j t a)
                 deriving (Show, Eq)
 
 data Values = Values {xval :: Matrix Double , yval :: Matrix Double,  
   theta :: Matrix Double , alpha :: Double}
   deriving (Show,Eq)
 
-
-
-tag::(Monoid m) => LinReg m (Values) -> m
-tag (Single _) = mempty
-tag (Cons m _ _) = m
-
-compute :: LinReg [Double] Values -> LinReg [Double] Values
-compute b@(Single a) = Cons (tag b) (newV a) b
-compute b@(Cons m a val) = Cons ([funCost a]<>(tag val)) (newV a) b
+compute :: LinReg Double (Matrix Double) Values -> LinReg Double (Matrix Double) Values
+compute b@(Single a) = Cons (funCost nVal) (theta nVal) nVal b
+  where
+    nVal = newV a
+compute b@(Cons j t a val) = Cons (funCost nVal) (theta nVal) nVal b
+  where
+    nVal = newV a
 
 newV :: Values -> Values
 newV a@(Values xval yval theta alpha) = Values xval yval (funGrad a) alpha
 
-takeLinReg:: Int -> LinReg [Double] Values -> LinReg [Double] Values 
+toPlot :: LinReg Double (Matrix Double) Values -> [(Double,Matrix Double)]
+toPlot (Single a) = []
+toPlot (Cons j t a val) = [(j,t)] ++ toPlot val
+
+takeLinReg :: Int -> LinReg Double (Matrix Double) Values -> LinReg Double (Matrix Double) Values
 takeLinReg 0 val = val
 takeLinReg n val  
   | n>=0 = takeLinReg (n - 1) (compute val)
   | otherwise = val
 
-functionY :: [(Double,Double)] -> (Double-> Double) -> [(Double,Double,Double)] -> IO Bool
-functionY datas g data3d = do 
+plotData :: [(Double,Double)] -> IO Bool
+plotData datas = do 
   plot X11 $ [
                     -- Function2D
                     -- [Title "Linear Regression", Color Red]
                     -- [Range 0 25] (g)
-                    -- , Data2D
-                    -- [Title "Data", Color Blue]
-                    -- [Range 0 25] datas
-                    -- , 
-                    Data3D
-                    [Title "theta vs J", Color Green]
-                    [RangeY 0 25] data3d
+                     Data2D
+                    [Title "Data", Color Blue, Style Lines]
+                    [Range 0 25] datas
+                    -- -- , 
+                    -- Data3D
+                    -- [Title "theta vs J", Color Green]
+                    -- [RangeY 0 25] data3d
                  ]
 
 
